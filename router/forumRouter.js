@@ -166,6 +166,39 @@ forumRouter.get("/api/forum-posts", async (req, res) => {
   }
 });
 
+forumRouter.get("/api/forum-post/single/:id", verifyToken, async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // =========================
+    // FIND POST
+    // =========================
+    const post = await forumCollection.findOne({
+      
+_id:new ObjectId(id),
+    });
+
+    if (!post) {
+      return res.status(404).json({
+        success: false,
+        message: "Post not found",
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      post,
+    });
+  } catch (error) {
+    throw new Error("Single Post API Error:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Failed to fetch post",
+    });
+  }
+});
+
 forumRouter.get("/api/forum-post/:id", verifyToken, async (req, res) => {
   try {
     const { id } = req.params;
