@@ -11,7 +11,7 @@ const bookingsCollection = db.collection("bookings");
 const usersCollection = db.collection("user");
 const forumCommentsCollection = db.collection("forumComments");
 
-// CREATE FORUM POST
+
 forumRouter.post("/api/forum-posts", verifyToken, async (req, res) => {
   try {
     const post = req.body;
