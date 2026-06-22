@@ -285,7 +285,6 @@ adminRouter.patch("/api/admin/trainers/:id/demote", verifyToken, async (req, res
   }
 });
 
-
 // classes
 adminRouter.get("/api/admin/classes", async (req, res) => {
   try {
