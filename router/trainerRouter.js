@@ -9,9 +9,6 @@ const usersCollection = db.collection("user");
 const trainerApplicationsCollection = db.collection("trainerApplications");
 
 
-
-
-
 trainerRouter.post(
   "/api/trainer-applications",
   verifyToken,
