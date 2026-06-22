@@ -70,7 +70,6 @@ favoriteRouter.get("/api/favorites/:email", async (req, res) => {
   }
 });
 
-
 favoriteRouter.delete("/api/favorites/:id", verifyToken, async (req, res) => {
   try {
     const { id } = req.params;
