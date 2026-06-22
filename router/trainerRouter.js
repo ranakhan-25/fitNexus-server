@@ -69,6 +69,7 @@ trainerRouter.get(
     }
   },
 );
+
 trainerRouter.get(
   "/trainer/overview",
   async (req, res) => {
