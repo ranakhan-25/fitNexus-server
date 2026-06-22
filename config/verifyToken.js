@@ -23,7 +23,7 @@ const verifyToken = async (req, res, next) => {
 
     try {
       const { payload } = await jwtVerify(token, JWKS);
-
+      req.user = payload;
       next();
     } catch (err) {
       return res.status(401).json({

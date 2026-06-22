@@ -10,92 +10,96 @@ const usersCollection = db.collection("user");
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
+bookingRouter.post(
+  "/create-checkout-session",
+  verifyToken,
+  async (req, res) => {
+    try {
+      const bookingData = req.body;
 
-bookingRouter.post("/create-checkout-session", verifyToken, async (req, res) => {
-  try {
-    const bookingData = req.body; 
+      if (
+        !bookingData ||
+        !bookingData.price ||
+        !bookingData.className ||
+        !bookingData.userId ||
+        !bookingData.classId
+      ) {
+        return res.status(400).json({
+          success: false,
+          message:
+            "Missing required booking details (Price, Class Name, User ID, or Class ID).",
+        });
+      }
 
-   
-    if (!bookingData || !bookingData.price || !bookingData.className || !bookingData.userId || !bookingData.classId) {
-      return res.status(400).json({
-        success: false,
-        message: "Missing required booking details (Price, Class Name, User ID, or Class ID).",
-      });
-    }
-
-    const existingBooking = await bookingsCollection.findOne({
-      classId: bookingData.classId,
-      userId: bookingData.userId,
-    });
-
-    if (existingBooking) {
-      return res.status(400).json({
-        success: false,
-        message: "You have already booked this class.",
-      });
-    }
-
-    const session = await stripe.checkout.sessions.create({
-      payment_method_types: ["card"],
-      mode: "payment",
-      success_url: `${process.env.JWKS_CLIENT_URL}/success`,
-      cancel_url: `${process.env.JWKS_CLIENT_URL}/cancel`,
-      customer_email: bookingData.userEmail || undefined,
-
-      metadata: {
+      const existingBooking = await bookingsCollection.findOne({
         classId: bookingData.classId,
         userId: bookingData.userId,
-        trainerId: bookingData.trainerId,
-        trainerName: bookingData.trainerName,
-        className: bookingData.className,
-        price: bookingData.price.toString(),
-        userEmail: bookingData.userEmail || ""
-      },
+      });
 
-      line_items: [
-        {
-          price_data: {
-            currency: "usd",
-            product_data: {
-              images: bookingData.classImage ? [bookingData.classImage] : [], 
-              name: bookingData.className,
-              description: `Trainer: ${bookingData.trainerName || "N/A"}`,
-            },
-            unit_amount: Math.round(bookingData.price * 100),
-          },
-          quantity: 1,
+      if (existingBooking) {
+        return res.status(400).json({
+          success: false,
+          message: "You have already booked this class.",
+        });
+      }
+
+      const session = await stripe.checkout.sessions.create({
+        payment_method_types: ["card"],
+        mode: "payment",
+        success_url: `${process.env.JWKS_CLIENT_URL}/success`,
+        cancel_url: `${process.env.JWKS_CLIENT_URL}/cancel`,
+        customer_email: bookingData.userEmail || undefined,
+
+        metadata: {
+          classId: bookingData.classId,
+          userId: bookingData.userId,
+          trainerId: bookingData.trainerId,
+          trainerName: bookingData.trainerName,
+          className: bookingData.className,
+          price: bookingData.price.toString(),
+          userEmail: bookingData.userEmail || "",
         },
-      ],
-    });
 
-   
-    const result = await bookingsCollection.insertOne({
-      ...bookingData,
-      stripeSessionId: session.id, 
-      paymentStatus: "Unpaid",     
-      status: "Pending",          
-      bookingDate: new Date(),
-    });
+        line_items: [
+          {
+            price_data: {
+              currency: "usd",
+              product_data: {
+                images: bookingData.classImage ? [bookingData.classImage] : [],
+                name: bookingData.className,
+                description: `Trainer: ${bookingData.trainerName || "N/A"}`,
+              },
+              unit_amount: Math.round(bookingData.price * 100),
+            },
+            quantity: 1,
+          },
+        ],
+      });
 
-  
-    return res.status(200).json({
-      success: true,
-      message: "Checkout session generated successfully",
-      id: session.id,
-      url: session.url,
-      bookingId: result.insertedId
-    });
+      const result = await bookingsCollection.insertOne({
+        ...bookingData,
+        stripeSessionId: session.id,
+        paymentStatus: "Paid",
+        status: "Approved",
+        bookingDate: new Date(),
+      });
 
-  } catch (error) {
-    return res.status(500).json({
-      success: false,
-      message: "Internal Server Error. Failed to create checkout session.",
-      error: error.message,
-    });
-  }
-});
-
-
+      return res.status(200).json({
+        success: true,
+        message: "Checkout session generated successfully",
+        id: session.id,
+        url: session.url,
+        bookingId: result.insertedId,
+      });
+    } catch (error) {
+      return res.status(500).json({
+        success: false,
+        message: "Internal Server Error. Failed to create checkout session.",
+        error: error.message,
+      });
+    }
+  },
+);
 
 bookingRouter.get("/api/bookings/:email", async (req, res) => {
   try {
@@ -110,12 +114,11 @@ bookingRouter.get("/api/bookings/:email", async (req, res) => {
 
     const bookings = await bookingsCollection
       .find({
-        userEmail: email
+        userEmail: email,
       })
-      .sort({ bookingDate: -1 }) 
+      .sort({ bookingDate: -1 })
       .toArray();
 
-   
     const formattedBookings = bookings.map((booking) => ({
       _id: booking._id,
       classId: booking.classId,
@@ -123,7 +126,7 @@ bookingRouter.get("/api/bookings/:email", async (req, res) => {
       classImage: booking.classImage,
       trainerId: booking.trainerId,
       trainerName: booking.trainerName,
-      price: Number(booking.price) || 0, 
+      price: Number(booking.price) || 0,
       userId: booking.userId,
       userEmail: booking.userEmail,
       paymentStatus: booking.paymentStatus,
@@ -136,7 +139,6 @@ bookingRouter.get("/api/bookings/:email", async (req, res) => {
       count: formattedBookings.length,
       data: formattedBookings,
     });
-
   } catch (error) {
     return res.status(500).json({
       success: false,
@@ -163,6 +165,31 @@ bookingRouter.get(
       });
     } catch (error) {
       res.status(500).json({ success: false });
+    }
+  },
+);
+
+bookingRouter.get(
+  "/api/bookings/trainer/classes/:id",
+  verifyToken,
+  async (req, res) => {
+    try {
+      const { id } = req.params;
+
+      const classes = await bookingsCollection.find({
+        classId: id,
+      }).toArray();
+
+
+      res.status(200).json({
+        success: true,
+        data:classes
+      })
+    } catch (error) {
+      res.status(401).json({
+        success: false,
+        message:error.message
+      })
     }
   },
 );

@@ -49,7 +49,7 @@ favoriteRouter.post("/api/favorites", verifyToken, async (req, res) => {
   }
 });
 
-favoriteRouter.get("/api/favorites/:email", async (req, res) => {
+favoriteRouter.get("/api/favorites/:email", verifyToken, async (req, res) => {
   try {
     const { email } = req.params;
 

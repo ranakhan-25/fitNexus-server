@@ -8,9 +8,10 @@ const classesCollection = db.collection("classes");
 const bookingsCollection = db.collection("bookings");
 const usersCollection = db.collection("user");
 
+
 classRouter.post("/api/classes", verifyToken, async (req, res) => {
   try {
-    
+
     const classData = req.body;
 
     const requiredFields = [
@@ -111,7 +112,7 @@ classRouter.get("/api/classes", async (req, res) => {
   }
 });
 
-classRouter.get("/api/classes/:id", async (req, res) => {
+classRouter.get("/api/classes/:id", verifyToken, async (req, res) => {
   try {
     const id = req.params.id;
 

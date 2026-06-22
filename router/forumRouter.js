@@ -55,7 +55,7 @@ forumRouter.post("/api/forum-posts", verifyToken, async (req, res) => {
   }
 });
 
-forumRouter.get("/api/forum-posts/:authorId", async (req, res) => {
+forumRouter.get("/api/forum-posts/:authorId", verifyToken, async (req, res) => {
   const { authorId } = req.params;
 
   const posts = await forumCollection
@@ -173,9 +173,10 @@ forumRouter.get("/api/forum-post/:id", verifyToken, async (req, res) => {
     // =========================
     // FIND POST
     // =========================
-    const post = await forumCollection.findOne({
-      _id: new ObjectId(id),
-    });
+    const post = await forumCollection.find({
+      
+authorId:id,
+    }).toArray();
 
     if (!post) {
       return res.status(404).json({

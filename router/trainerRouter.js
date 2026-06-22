@@ -81,7 +81,7 @@ trainerRouter.get(
       const classIds = classes.map((c) => c._id);
 
       const bookings = await bookingsCollection
-        .find({ classId: { $in: classIds } })
+        .find({trainerId: trainerId})
         .toArray();
 
       const totalClasses = classes.length;
