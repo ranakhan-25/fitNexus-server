@@ -10,6 +10,7 @@ const usersCollection = db.collection("user");
 
 classRouter.post("/api/classes", verifyToken, async (req, res) => {
   try {
+    
     const classData = req.body;
 
     const requiredFields = [
