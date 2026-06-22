@@ -54,6 +54,7 @@ forumRouter.post("/api/forum-posts", verifyToken, async (req, res) => {
     });
   }
 });
+
 forumRouter.get("/api/forum-posts/:authorId", async (req, res) => {
   const { authorId } = req.params;
 
