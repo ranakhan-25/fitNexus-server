@@ -65,6 +65,7 @@ forumRouter.get("/api/forum-posts/:authorId", async (req, res) => {
 
   res.send(posts);
 });
+
 forumRouter.get("/api/forum/latest", async (req, res) => {
   try {
     const posts = await forumCollection
