@@ -13,8 +13,6 @@ const trainerApplicationsCollection = db.collection("trainerApplications");
 const verifyAdmin = async (req, res, next) => {
   try {
     const userEmail = req.user?.email;
-
-    console.log(userEmail)
     
     if (!userEmail) {
       return res.status(401).json({ 
