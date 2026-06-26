@@ -13,41 +13,37 @@ const trainerApplicationsCollection = db.collection("trainerApplications");
 const verifyAdmin = async (req, res, next) => {
   try {
     const userEmail = req.user?.email;
-    
+
     if (!userEmail) {
-      return res.status(401).json({ 
-        success: false, 
-        message: "Unauthorized: Missing user information" 
+      return res.status(401).json({
+        success: false,
+        message: "Unauthorized: Missing user information",
       });
     }
-    
     const user = await usersCollection.findOne({ email: userEmail });
 
     if (!user) {
-      return res.status(404).json({ 
-        success: false, 
-        message: "User not found in the database" 
+      return res.status(404).json({
+        success: false,
+        message: "User not found in the database",
       });
     }
 
     if (user.role !== "admin") {
-      return res.status(403).json({ 
-        success: false, 
-        message: "Access Denied: You do not have admin permissions" 
+      return res.status(403).json({
+        success: false,
+        message: "Access Denied: You do not have admin permissions",
       });
     }
-
     next();
-
   } catch (error) {
-    res.status(500).json({ 
-      success: false, 
-      message: "Internal Server Error in Admin Verification", 
-      error: error.message 
+    res.status(500).json({
+      success: false,
+      message: "Internal Server Error in Admin Verification",
+      error: error.message,
     });
   }
 };
-
 
 adminRouter.get("/api/admin/users", verifyToken, async (req, res) => {
   try {
@@ -73,28 +69,20 @@ adminRouter.get("/api/admin/users", verifyToken, async (req, res) => {
 
 adminRouter.get("/api/admin/overview", async (req, res) => {
   try {
-    // ===== TOTAL USERS =====
     const totalUsers = await usersCollection.countDocuments();
 
-    // ===== TOTAL CLASSES =====
     const totalClasses = await classesCollection.countDocuments();
-
-    // ===== TOTAL BOOKINGS =====
     const totalBookings = await bookingsCollection.countDocuments();
-
-    // (Optional) recent stats example
     const recentUsers = await usersCollection
       .find({})
       .sort({ createdAt: -1 })
       .limit(5)
       .toArray();
-
     const recentClasses = await classesCollection
       .find({})
       .sort({ createdAt: -1 })
       .limit(5)
       .toArray();
-
     return res.status(200).json({
       success: true,
       stats: {
@@ -140,12 +128,10 @@ adminRouter.patch(
   async (req, res) => {
     try {
       const { id } = req.params;
-
       await usersCollection.updateOne(
         { _id: new ObjectId(id) },
         { $set: { status: "active" } },
       );
-
       res.json({ success: true, message: "User unblocked" });
     } catch (error) {
       res.status(500).json({ success: false, message: error.message });
@@ -159,12 +145,10 @@ adminRouter.patch(
   async (req, res) => {
     try {
       const { id } = req.params;
-
       await usersCollection.updateOne(
         { _id: new ObjectId(id) },
         { $set: { role: "admin" } },
       );
-
       res.json({ success: true, message: "User promoted to admin" });
     } catch (error) {
       res.status(500).json({ success: false, message: error.message });
@@ -172,7 +156,6 @@ adminRouter.patch(
   },
 );
 
-// for trainer
 adminRouter.get(
   "/api/admin/trainer-applications",
   verifyToken,
@@ -183,7 +166,6 @@ adminRouter.get(
           status: "pending",
         })
         .toArray();
-
       res.json({
         success: true,
         applications,
@@ -207,14 +189,12 @@ adminRouter.patch(
       const application = await trainerApplicationsCollection.findOne({
         _id: new ObjectId(id),
       });
-
       if (!application) {
         return res.status(404).json({
           success: false,
           message: "Application not found",
         });
       }
-
       await usersCollection.updateOne(
         {
           email: application.email,
@@ -258,7 +238,6 @@ adminRouter.patch(
     try {
       const { id } = req.params;
       const { feedback } = req.body;
-
       await trainerApplicationsCollection.updateOne(
         {
           _id: new ObjectId(id),
@@ -342,7 +321,7 @@ adminRouter.get("/api/admin/classes", verifyToken, async (req, res) => {
   try {
     const classes = await classesCollection
       .find()
-      .sort({ createdAt: -1 }) // নতুন তৈরি করা ক্লাসগুলো ক্রমানুসারে উপরে দেখাবে
+      .sort({ createdAt: -1 })
       .toArray();
 
     res.json({
@@ -357,7 +336,6 @@ adminRouter.get("/api/admin/classes", verifyToken, async (req, res) => {
   }
 });
 
-// 2. PATCH UPDATE CLASS STATUS
 adminRouter.patch(
   "/api/admin/classes/:id/status",
   verifyToken,
@@ -365,35 +343,30 @@ adminRouter.patch(
     try {
       const { id } = req.params;
       const { status } = req.body;
-
       if (!["Approved", "Rejected"].includes(status)) {
         return res.status(400).json({
           success: false,
           message: "Invalid status parameters. Must be approved or rejected.",
         });
       }
-
       if (!ObjectId.isValid(id)) {
         return res.status(400).json({
           success: false,
           message: "Invalid unique class ID format.",
         });
       }
-
       const result = await classesCollection.updateOne(
         { _id: new ObjectId(id) },
         {
           $set: { status },
         },
       );
-
       if (result.matchedCount === 0) {
         return res.status(404).json({
           success: false,
           message: "Targeted class not found.",
         });
       }
-
       res.json({
         success: true,
         message: `Class status updated to ${status}`,
@@ -407,29 +380,25 @@ adminRouter.patch(
   },
 );
 
-// 3. DELETE CLASS ROUTE
+
 adminRouter.delete("/api/admin/classes/:id", verifyToken, async (req, res) => {
   try {
     const { id } = req.params;
-
     if (!ObjectId.isValid(id)) {
       return res.status(400).json({
         success: false,
         message: "Invalid unique class ID format.",
       });
     }
-
     const result = await classesCollection.deleteOne({
       _id: new ObjectId(id),
     });
-
     if (result.deletedCount === 0) {
       return res.status(404).json({
         success: false,
         message: "Class already deleted or does not exist.",
       });
     }
-
     res.json({
       success: true,
       message: "Class deleted successfully from cloud database",
@@ -449,7 +418,6 @@ adminRouter.get("/api/admin/forum-posts", verifyToken, async (req, res) => {
       .find({})
       .sort({ createdAt: -1 })
       .toArray();
-
     res.json({
       success: true,
       data: posts,
@@ -462,7 +430,7 @@ adminRouter.get("/api/admin/forum-posts", verifyToken, async (req, res) => {
   }
 });
 
-// 2. DELETE SINGLE FORUM POST
+
 adminRouter.delete(
   "/api/admin/forum-posts/:id",
   verifyToken,
@@ -475,18 +443,15 @@ adminRouter.delete(
           message: "Invalid Post ID format provided",
         });
       }
-
       const result = await forumCollection.deleteOne({
         _id: new ObjectId(id),
       });
-
       if (result.deletedCount === 0) {
         return res.status(404).json({
           success: false,
           message: "Post not found or already deleted",
         });
       }
-
       res.json({
         success: true,
         message: "Post deleted successfully from database",
@@ -500,25 +465,30 @@ adminRouter.delete(
   },
 );
 
-adminRouter.get("/api/admin/transactions", verifyToken,verifyAdmin, async (req, res) => {
-  try {
-    const transactions = await bookingsCollection
-      .find({ paymentStatus: "Paid" })
-      .sort({ bookingDate: -1 })
-      .toArray();
+adminRouter.get(
+  "/api/admin/transactions",
+  verifyToken,
+  verifyAdmin,
+  async (req, res) => {
+    try {
+      const transactions = await bookingsCollection
+        .find({ paymentStatus: "Paid" })
+        .sort({ bookingDate: -1 })
+        .toArray();
 
-    res.status(200).json({
-      success: true,
-      count: transactions.length,
-      transactions: transactions,
-    });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: "Server Error: Failed to fetch transactions",
-      error: error.message,
-    });
-  }
-});
+      res.status(200).json({
+        success: true,
+        count: transactions.length,
+        transactions: transactions,
+      });
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        message: "Server Error: Failed to fetch transactions",
+        error: error.message,
+      });
+    }
+  },
+);
 
 module.exports = adminRouter;

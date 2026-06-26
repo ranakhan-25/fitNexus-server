@@ -14,13 +14,16 @@ const app = express();
 
 
 app.use(cors());
+
+
+
 app.use(express.json());
 
+app.use(bookingRouter);
 app.use(classRouter);
 app.use(forumRouter);
 app.use(userRouter);
 app.use(favoriteRouter);
-app.use(bookingRouter);
 app.use(trainerRouter);
 app.use(adminRouter);
 
